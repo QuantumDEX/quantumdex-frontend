@@ -15,8 +15,8 @@ export const metadata = {
 
 export const appKitOptions = {
   adapters: [wagmiAdapter],
-  networks,
-  projectId,
+  networks: networks as [typeof networks[0], ...typeof networks[]],
+  projectId: projectId!, // Non-null assertion since wagmi.ts throws if undefined
   metadata,
   features: {
     swaps: false,
@@ -37,7 +37,7 @@ const wrapWalletClient = (walletClient: WalletClient): Eip1193Provider => ({
 export const walletClientToSigner = async (
   walletClient: WalletClient | null | undefined,
 ): Promise<JsonRpcSigner | null> => {
-  if (!walletClient) return null;
+  if (!walletClient || !walletClient.account) return null;
   const provider = new BrowserProvider(
     wrapWalletClient(walletClient) as never,
     walletClient.chain?.id ?? 1,
