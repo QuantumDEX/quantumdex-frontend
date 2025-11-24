@@ -75,12 +75,7 @@ export default function Home() {
             </p>
             <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
               {!isConnected ? (
-                <>
-                  <AppKitConnectButton label="Connect Wallet" size="lg" />
-                  <span className="text-sm text-emerald-100/75">
-                    Project ready? Replace this hero with pool stats and swap UI.
-                  </span>
-                </>
+                <AppKitConnectButton label="Connect Wallet" size="lg" />
               ) : (
                 <>
                   <Link
@@ -98,11 +93,6 @@ export default function Home() {
                 </>
               )}
             </div>
-            {isConnected ? (
-              <span className="text-sm text-emerald-100/75">
-                Connected as {address ? shortenAddress(address, 5) : "wallet"} — dive into liquidity flows or launch a trade.
-              </span>
-            ) : null}
           </div>
           <div className="grid w-full max-w-sm grid-cols-1 gap-3 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md lg:max-w-md">
             <h2 className="text-sm font-semibold uppercase tracking-[0.3em] text-emerald-100/80">
@@ -127,9 +117,6 @@ export default function Home() {
                 <span className="max-w-[12rem] text-right font-medium text-white">
                   {isConnected && address ? shortenAddress(address, 5) : "—"}
                 </span>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-emerald-500/10 px-4 py-3 text-xs text-emerald-100/90">
-                Need programmatic access? Inspect `walletClientToSigner` & `publicClientToProvider` utilities to grab ready-to-use ethers interfaces.
               </div>
             </div>
           </div>
@@ -158,65 +145,86 @@ export default function Home() {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-[3fr,2fr]">
-        <div className="rounded-3xl border border-zinc-200/60 bg-white/80 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/70">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Top Performing Pools</h3>
+        <div className="rounded-3xl border border-zinc-200/60 bg-white/80 p-8 shadow-lg dark:border-zinc-800 dark:bg-zinc-900/70">
+          <div className="flex items-start justify-between mb-6">
+            <div className="space-y-1">
+              <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Top Performing Pools</h3>
               <p className="text-sm text-zinc-500 dark:text-zinc-400">Real-time analytics for the most efficient routes.</p>
             </div>
             <Link
               href="/pools"
-              className="rounded-full border border-emerald-200 px-3 py-1.5 text-sm font-medium text-emerald-600 transition hover:bg-emerald-500 hover:text-white"
+              className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-600 transition hover:bg-emerald-500 hover:text-white hover:border-emerald-500 dark:border-emerald-500/50 dark:bg-emerald-500/10 dark:text-emerald-400 dark:hover:bg-emerald-500 dark:hover:text-white"
             >
-              View all
+              View all →
             </Link>
           </div>
-          <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200/80 dark:border-zinc-800/80">
-            <table className="min-w-full divide-y divide-zinc-200/80 text-sm dark:divide-zinc-800/80">
-              <thead className="bg-zinc-50/70 dark:bg-zinc-900">
-                <tr className="text-left text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
-                  <th className="px-4 py-3">Pool</th>
-                  <th className="px-4 py-3">TVL</th>
-                  <th className="px-4 py-3">Volume (24h)</th>
-                  <th className="px-4 py-3">Est. APR</th>
+          <div className="overflow-hidden rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-zinc-50/50 to-white dark:border-zinc-800/80 dark:from-zinc-950/50 dark:to-zinc-900/50">
+            <table className="min-w-full divide-y divide-zinc-200/60 text-sm dark:divide-zinc-800/60">
+              <thead className="bg-zinc-100/80 dark:bg-zinc-900/80">
+                <tr className="text-left text-xs font-bold uppercase tracking-[0.1em] text-zinc-600 dark:text-zinc-400">
+                  <th className="px-6 py-4">Pool</th>
+                  <th className="px-6 py-4 text-right">TVL</th>
+                  <th className="px-6 py-4 text-right">Volume (24h)</th>
+                  <th className="px-6 py-4 text-right">Est. APR</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200/60 dark:divide-zinc-800/60">
-                {featuredPools.map((pool) => (
-                  <tr key={pool.pair} className="bg-white/60 text-zinc-700 transition hover:bg-emerald-50 dark:bg-zinc-950/40 dark:text-zinc-200">
-                    <td className="px-4 py-3 text-sm font-medium text-zinc-900 dark:text-zinc-50">{pool.pair}</td>
-                    <td className="px-4 py-3">{pool.tvl}</td>
-                    <td className="px-4 py-3">{pool.volume}</td>
-                    <td className="px-4 py-3 font-semibold text-emerald-600 dark:text-emerald-400">{pool.apr}</td>
+              <tbody className="divide-y divide-zinc-200/40 bg-white/60 dark:divide-zinc-800/40 dark:bg-zinc-950/30">
+                {featuredPools.map((pool, index) => (
+                  <tr 
+                    key={pool.pair} 
+                    className="group transition-all hover:bg-gradient-to-r hover:from-emerald-50/80 hover:to-emerald-100/40 dark:hover:from-emerald-500/5 dark:hover:to-emerald-500/10"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 text-xs font-bold text-white shadow-sm">
+                          {index + 1}
+                        </div>
+                        <span className="text-sm font-bold text-zinc-900 dark:text-zinc-50">{pool.pair}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right text-sm font-semibold text-zinc-700 dark:text-zinc-300">{pool.tvl}</td>
+                    <td className="px-6 py-4 text-right text-sm font-semibold text-zinc-700 dark:text-zinc-300">{pool.volume}</td>
+                    <td className="px-6 py-4 text-right">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1 text-sm font-bold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400">
+                        {pool.apr}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
         </div>
-        <div className="flex flex-col gap-4 rounded-3xl border border-zinc-200/60 bg-white/80 p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/70">
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">Strategy Center</h3>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            Shortcut into high-intent tasks with curated workflows built for professional liquidity desks.
-          </p>
+        <div className="flex flex-col gap-6 rounded-3xl border border-zinc-200/60 bg-white/80 p-8 shadow-lg dark:border-zinc-800 dark:bg-zinc-900/70">
+          <div className="space-y-1">
+            <h3 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">Strategy Center</h3>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Shortcut into high-intent tasks with curated workflows built for professional liquidity desks.
+            </p>
+          </div>
           <div className="flex flex-col gap-3">
-            {quickActions.map((action) => (
+            {quickActions.map((action, index) => (
               <Link
                 key={action.href}
                 href={action.href}
-                className="group rounded-2xl border border-zinc-200 bg-white/70 px-4 py-4 transition hover:-translate-y-1 hover:border-emerald-400 hover:bg-emerald-50 dark:border-zinc-700 dark:bg-zinc-900/70 dark:hover:border-emerald-400/70 dark:hover:bg-emerald-500/10"
+                className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-gradient-to-br from-white to-zinc-50/50 px-5 py-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-500/10 dark:border-zinc-700 dark:from-zinc-900/70 dark:to-zinc-950/50 dark:hover:border-emerald-400/70 dark:hover:bg-emerald-500/5"
               >
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-zinc-900 transition group-hover:text-emerald-600 dark:text-zinc-100">
-                    {action.label}
-                  </span>
-                  <span className="text-xs font-medium uppercase tracking-wider text-zinc-400">
-                    ↗
-                  </span>
+                <div className="relative z-10 flex items-start justify-between">
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-zinc-900 transition group-hover:text-emerald-600 dark:text-zinc-100 dark:group-hover:text-emerald-400">
+                        {action.label}
+                      </span>
+                      <span className="text-xs font-medium text-emerald-500 opacity-0 transition-opacity group-hover:opacity-100">
+                        →
+                      </span>
+                    </div>
+                    <p className="text-xs leading-relaxed text-zinc-600 transition group-hover:text-zinc-700 dark:text-zinc-400 dark:group-hover:text-zinc-300">
+                      {action.description}
+                    </p>
+                  </div>
                 </div>
-                <p className="mt-1 text-xs text-zinc-500 transition group-hover:text-zinc-600 dark:text-zinc-400 dark:group-hover:text-zinc-200">
-                  {action.description}
-                </p>
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/0 to-emerald-500/0 transition-all group-hover:from-emerald-500/5 group-hover:to-emerald-400/5" />
               </Link>
             ))}
           </div>

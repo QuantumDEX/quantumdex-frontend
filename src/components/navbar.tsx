@@ -11,15 +11,6 @@ import { useAccount, useChainId, useDisconnect } from "wagmi";
 import { shortenAddress } from "@/lib/utils";
 import { networks } from "@/config/wagmi";
 
-// Network icon URLs - using reliable CDN sources
-const NETWORK_ICONS: Record<number, string> = {
-  1: "https://assets.coingecko.com/coins/images/279/small/ethereum.png",
-  8453: "https://token-icons.llama.fi/base.png",
-  42161: "https://assets.coingecko.com/coins/images/16547/small/arbitrum.png",
-  10: "https://assets.coingecko.com/coins/images/25244/small/Optimism.png",
-  137: "https://assets.coingecko.com/coins/images/4713/small/matic-token-icon.png",
-};
-
 const NAV_LINKS = [
   { href: "/", label: "Overview" },
   { href: "/swap", label: "Swap" },
@@ -41,8 +32,7 @@ export const Navbar = () => {
   const networkInfo = useMemo(() => {
     if (!chainId) return null;
     const network = networks.find((item) => item.id === chainId);
-    const iconUrl = NETWORK_ICONS[chainId] || null;
-    return network ? { name: network.name, icon: iconUrl } : { name: `Chain ${chainId}`, icon: iconUrl };
+    return network ? { name: network.name } : { name: `Chain ${chainId}` };
   }, [chainId]);
 
   return (
@@ -77,18 +67,6 @@ export const Navbar = () => {
               <div className="hidden items-center gap-2 rounded-full border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-700 shadow-sm dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 lg:flex">
                 <span>{displayAddress}</span>
                 <span className="text-zinc-400">|</span>
-                {networkInfo.icon && (
-                  <img 
-                    src={networkInfo.icon} 
-                    alt={networkInfo.name} 
-                    className="h-4 w-4 rounded-full object-cover flex-shrink-0"
-                    width={16}
-                    height={16}
-                    onError={(e) => {
-                      console.error('Failed to load network icon:', networkInfo.icon);
-                    }}
-                  />
-                )}
                 <span>{networkInfo.name}</span>
               </div>
               <button
