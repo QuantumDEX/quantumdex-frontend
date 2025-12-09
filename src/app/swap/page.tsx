@@ -53,7 +53,6 @@ export default function SwapPage() {
   const [slippage, setSlippage] = useState("0.5%");
   const [advancedMode, setAdvancedMode] = useState(false);
   const [sellAmount, setSellAmount] = useState<string>("");
-  const [estimatedBuyAmount, setEstimatedBuyAmount] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
   const [loadingQuote, setLoadingQuote] = useState(false);
   const [sellTokenBalance, setSellTokenBalance] = useState<string>("0");
@@ -107,7 +106,7 @@ export default function SwapPage() {
 
   // Check token allowance for ERC20 tokens
   useEffect(() => {
-    if (!isConnected || !address || !publicClient || !AMM_ADDRESS) return;
+    if (!isConnected || !address || !publicClient) return;
     // Skip for native ETH
     if (sellToken.address === "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE") {
       setTokenAllowance("0");
@@ -139,7 +138,7 @@ export default function SwapPage() {
     return () => {
       mounted = false;
     };
-  }, [isConnected, address, publicClient, sellToken, sellAmount, AMM_ADDRESS]);
+  }, [isConnected, address, publicClient, sellToken, sellAmount]);
 
   // Fetch on-chain quote when sellAmount or tokens change.
   useEffect(() => {
@@ -204,7 +203,7 @@ export default function SwapPage() {
     return () => {
       mounted = false;
     };
-  }, [isConnected, sellAmount, sellToken, buyToken, publicClient, slippage, ROUTER_ADDRESS, AMM_ADDRESS, FACTORY_ADDRESS]);
+  }, [isConnected, sellAmount, sellToken, buyToken, publicClient, slippage]);
 
   const handleFlip = () => {
     const tempToken = sellToken;
@@ -218,7 +217,7 @@ export default function SwapPage() {
   };
 
   const handleApprove = useCallback(async () => {
-    if (!isConnected || !address || !walletClient || !AMM_ADDRESS || !sellToken) return;
+    if (!isConnected || !address || !walletClient || !sellToken) return;
 
     try {
       setApproving(true);
@@ -237,16 +236,17 @@ export default function SwapPage() {
           setNeedsApproval(false);
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Approval error:", error);
-      setErrorMessage(error?.message || "Approval failed");
+      const errorMessage = error instanceof Error ? error.message : "Approval failed";
+      setErrorMessage(errorMessage);
     } finally {
       setApproving(false);
     }
-  }, [isConnected, address, walletClient, AMM_ADDRESS, sellToken, publicClient]);
+  }, [isConnected, address, walletClient, sellToken, publicClient]);
 
   const handleSwap = useCallback(async () => {
-    if (!isConnected || !address || !walletClient || !AMM_ADDRESS || !sellAmount || !quote) return;
+    if (!isConnected || !address || !walletClient || !sellAmount || !quote) return;
 
     try {
       setSubmitting(true);
@@ -257,15 +257,14 @@ export default function SwapPage() {
 
       const amountIn = parseUnits(sellAmount, sellToken.decimals ?? 18);
       const minAmountOut = parseUnits(quote.minReceived, buyToken.decimals ?? 18);
-      const slippagePercent = parseFloat(slippage.replace("%", ""));
 
       const result = await amm.swap(
         signer,
         AMM_ADDRESS,
         sellToken.address,
         buyToken.address,
-        amountIn,
-        minAmountOut,
+        amountIn.toString(),
+        minAmountOut.toString(),
         address, // recipient
         30, // feeBps - default 0.3%
       );
@@ -294,14 +293,15 @@ export default function SwapPage() {
           setTxStatus("idle");
         }, 3000);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Swap error:", error);
       setTxStatus("error");
-      setErrorMessage(error?.message || "Swap failed");
+      const errorMessage = error instanceof Error ? error.message : "Swap failed";
+      setErrorMessage(errorMessage);
     } finally {
       setSubmitting(false);
     }
-  }, [isConnected, address, walletClient, AMM_ADDRESS, sellAmount, quote, sellToken, buyToken, slippage, publicClient]);
+  }, [isConnected, address, walletClient, sellAmount, quote, sellToken, buyToken, publicClient]);
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-12 px-6 py-14">
