@@ -79,19 +79,91 @@ export default function SwapPage() {
     routeCount: number;
   }>(null);
 
+  // Fetch token balances when wallet connects or tokens change
+  useEffect(() => {
+    if (!isConnected || !address || !publicClient) return;
+    const provider = publicClientToProvider(publicClient);
+    if (!provider) return;
+
+    let mounted = true;
+    (async () => {
+      try {
+        const [sellBal, buyBal] = await Promise.all([
+          amm.getTokenBalance(provider, sellToken.address, address, sellToken.decimals ?? 18),
+          amm.getTokenBalance(provider, buyToken.address, address, buyToken.decimals ?? 18),
+        ]);
+        if (mounted) {
+          setSellTokenBalance(sellBal);
+          setBuyTokenBalance(buyBal);
+        }
+      } catch (error) {
+        console.error("Error fetching balances:", error);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [isConnected, address, publicClient, sellToken, buyToken]);
+
+  // Check token allowance for ERC20 tokens
+  useEffect(() => {
+    if (!isConnected || !address || !publicClient || !AMM_ADDRESS) return;
+    // Skip for native ETH
+    if (sellToken.address === "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE") {
+      setTokenAllowance("0");
+      setNeedsApproval(false);
+      return;
+    }
+
+    const provider = publicClientToProvider(publicClient);
+    if (!provider) return;
+
+    let mounted = true;
+    (async () => {
+      try {
+        const allowance = await amm.getTokenAllowance(provider, sellToken.address, address, AMM_ADDRESS);
+        if (mounted) {
+          setTokenAllowance(allowance);
+          // Check if approval is needed
+          if (sellAmount) {
+            const amountInWei = parseUnits(sellAmount, sellToken.decimals ?? 18);
+            setNeedsApproval(BigInt(allowance) < amountInWei);
+          } else {
+            setNeedsApproval(false);
+          }
+        }
+      } catch (error) {
+        console.error("Error checking allowance:", error);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [isConnected, address, publicClient, sellToken, sellAmount, AMM_ADDRESS]);
+
   // Fetch on-chain quote when sellAmount or tokens change.
   useEffect(() => {
     let mounted = true;
     setQuote(null);
-    if (!isConnected || !sellAmount || !sellToken || !buyToken) return;
-    // create a provider for reads; uses injected provider for the current network
-    if (!window.ethereum) return;
-    const provider = new BrowserProvider(window.ethereum as any);
+    setLoadingQuote(true);
+    setErrorMessage(null);
+
+    if (!isConnected || !sellAmount || !sellToken || !buyToken || !publicClient) {
+      setLoadingQuote(false);
+      return;
+    }
+
+    const provider = publicClientToProvider(publicClient);
+    if (!provider) {
+      setLoadingQuote(false);
+      return;
+    }
+
     (async () => {
       try {
         const out = await amm.getQuote(
           provider as any,
-          ROUTER_ADDRESS,
+          ROUTER_ADDRESS || AMM_ADDRESS,
           sellToken.address,
           buyToken.address,
           sellAmount,
@@ -103,27 +175,36 @@ export default function SwapPage() {
         if (!mounted) return;
         if (!out) {
           setQuote(null);
+          setErrorMessage("Unable to fetch quote. Pool may not exist.");
           return;
         }
         const buyHuman = formatUnits(out, buyToken.decimals ?? 18);
-        const minReceived = (Number(buyHuman) * 0.995).toFixed(6);
+        const slippagePercent = parseFloat(slippage.replace("%", ""));
+        const minReceived = (Number(buyHuman) * (1 - slippagePercent / 100)).toFixed(6);
+        const priceRatio = Number(buyHuman) / Number(sellAmount);
         setQuote({
           sellAmount: sellAmount,
           buyAmount: buyHuman,
           minReceived,
-          executionPrice: `1 ${sellToken.symbol} ≈ ${(Number(sellToken.price as number) / Number(buyToken.price as number)).toFixed(6)} ${buyToken.symbol}`,
-          impact: "~0.04%",
+          executionPrice: `1 ${sellToken.symbol} ≈ ${priceRatio.toFixed(6)} ${buyToken.symbol}`,
+          impact: "~0.04%", // TODO: Calculate actual price impact
           routeCount: 1,
         });
-      } catch (e) {
+        setErrorMessage(null);
+      } catch (e: any) {
         console.error("quote error", e);
-        if (mounted) setQuote(null);
+        if (mounted) {
+          setQuote(null);
+          setErrorMessage(e?.message || "Failed to fetch quote");
+        }
+      } finally {
+        if (mounted) setLoadingQuote(false);
       }
     })();
     return () => {
       mounted = false;
     };
-  }, [isConnected, sellAmount, sellToken, buyToken]);
+  }, [isConnected, sellAmount, sellToken, buyToken, publicClient, slippage, ROUTER_ADDRESS, AMM_ADDRESS, FACTORY_ADDRESS]);
 
   const handleFlip = () => {
     setSellToken(buyToken);
