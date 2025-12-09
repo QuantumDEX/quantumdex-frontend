@@ -45,6 +45,8 @@ const routeLegs = [
 export default function SwapPage() {
   const { isConnected, address } = useAccount();
   const chainId = useChainId();
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
 
   const [sellToken, setSellToken] = useState(tokens[0]);
   const [buyToken, setBuyToken] = useState(tokens[1]);
@@ -53,6 +55,15 @@ export default function SwapPage() {
   const [sellAmount, setSellAmount] = useState<string>("");
   const [estimatedBuyAmount, setEstimatedBuyAmount] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
+  const [loadingQuote, setLoadingQuote] = useState(false);
+  const [sellTokenBalance, setSellTokenBalance] = useState<string>("0");
+  const [buyTokenBalance, setBuyTokenBalance] = useState<string>("0");
+  const [tokenAllowance, setTokenAllowance] = useState<string>("0");
+  const [needsApproval, setNeedsApproval] = useState(false);
+  const [approving, setApproving] = useState(false);
+  const [txStatus, setTxStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const activeNetwork = useMemo(
     () => (chainId ? networks.find((item) => item.id === chainId) : undefined),
