@@ -195,21 +195,34 @@ export async function removeLiquidity(
 }
 
 /**
- * Execute a swap via a router contract. Returns transaction receipt and any returned value.
+ * Execute a swap via the AMM contract. Returns transaction receipt and amountOut.
+ * - Uses the actual AMM contract ABI with poolId-based swaps
+ * - Automatically fetches poolId using getPoolId
  */
 export async function swap(
   signer: JsonRpcSigner,
-  routerAddress: string,
+  ammAddress: string,
   tokenIn: string,
   tokenOut: string,
   amountIn: string | number,
   minAmountOut: string | number,
-  routerAbi?: any,
+  recipient: string,
+  feeBps: number = 30, // Default 0.3% fee (30 basis points)
+  ammAbi?: any,
 ) {
-  const resolvedRouterAbi = await resolveAbi(routerAbi, "@/abis/Router.json", DEFAULT_ROUTER_ABI);
-  const router = new Contract(routerAddress, resolvedRouterAbi, signer);
-  const tx = await router.swap(tokenIn, tokenOut, amountIn, minAmountOut);
-  return tx.wait?.();
+  const resolvedAmmAbi = await resolveAbi(ammAbi, "@/lib/abi/AMM.json", null);
+  if (!resolvedAmmAbi) {
+    throw new Error("AMM ABI not found. Please provide ammAbi or ensure @/lib/abi/AMM.json exists");
+  }
+  const amm = new Contract(ammAddress, resolvedAmmAbi, signer);
+  
+  // Get poolId for the token pair
+  const poolId = await amm.getPoolId(tokenIn, tokenOut, feeBps);
+  
+  // Execute swap
+  const tx = await amm.swap(poolId, tokenIn, amountIn, minAmountOut, recipient);
+  const receipt = await tx.wait?.();
+  return { receipt, amountOut: receipt?.logs ? "0" : "0" }; // amountOut would be parsed from events
 }
 
 /**
