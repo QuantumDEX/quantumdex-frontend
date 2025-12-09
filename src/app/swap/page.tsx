@@ -532,7 +532,13 @@ export default function SwapPage() {
             ))}
           </div>
 
-          {quote ? (
+          {loadingQuote ? (
+            <div className="rounded-2xl border border-zinc-200/70 bg-zinc-50/70 p-4 text-sm text-zinc-500 dark:border-zinc-800/60 dark:bg-zinc-900/60 dark:text-zinc-300">
+              <div className="flex items-center justify-center gap-2">
+                <span>Fetching quote...</span>
+              </div>
+            </div>
+          ) : quote ? (
             <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/70 p-4 text-sm text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">
               <div className="flex items-center justify-between">
                 <span>Execution price</span>
@@ -540,16 +546,39 @@ export default function SwapPage() {
               </div>
               <div className="mt-2 flex items-center justify-between">
                 <span>Slippage ({slippage})</span>
-                <span className="font-semibold text-emerald-500">{quote.minReceived} USDC min received</span>
+                <span className="font-semibold text-emerald-500">
+                  {quote.minReceived} {buyToken.symbol} min received
+                </span>
               </div>
               <div className="mt-2 flex items-center justify-between">
                 <span>Price impact</span>
                 <span className="font-semibold text-emerald-500">{quote.impact}</span>
               </div>
+              {txHash && (
+                <div className="mt-3 rounded-lg border border-emerald-300/50 bg-emerald-100/50 p-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span>Transaction:</span>
+                    <a
+                      href={`${activeNetwork?.blockExplorers?.default?.url}/tx/${txHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="font-mono text-emerald-600 underline hover:text-emerald-700 dark:text-emerald-300"
+                    >
+                      {shortenAddress(txHash, 8)}
+                    </a>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : errorMessage ? (
+            <div className="rounded-2xl border border-red-200/70 bg-red-50/70 p-4 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+              {errorMessage}
             </div>
           ) : (
             <div className="rounded-2xl border border-zinc-200/70 bg-zinc-50/70 p-4 text-sm text-zinc-500 dark:border-zinc-800/60 dark:bg-zinc-900/60 dark:text-zinc-300">
-              Connect a wallet to fetch live quotes, route breakdowns, and settlement guarantees.
+              {isConnected
+                ? "Enter an amount to see quote details, route breakdown, and settlement guarantees."
+                : "Connect a wallet to fetch live quotes, route breakdowns, and settlement guarantees."}
             </div>
           )}
 
