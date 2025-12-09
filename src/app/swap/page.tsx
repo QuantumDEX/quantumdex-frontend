@@ -379,8 +379,17 @@ export default function SwapPage() {
                 />
               </div>
               <div className="flex flex-wrap items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                <span>Balance: {sellToken.balance} {sellToken.symbol}</span>
-                <span>Price: {sellToken.price}</span>
+                <span>Balance: {isConnected ? sellTokenBalance : sellToken.balance} {sellToken.symbol}</span>
+                <button
+                  onClick={() => {
+                    if (isConnected && sellTokenBalance) {
+                      setSellAmount(sellTokenBalance);
+                    }
+                  }}
+                  className="text-emerald-500 hover:text-emerald-600"
+                >
+                  Max
+                </button>
               </div>
             </div>
 
@@ -414,14 +423,14 @@ export default function SwapPage() {
                 </div>
                 <input
                   type="text"
-                  placeholder={isConnected ? "~ 0.00" : "—"}
+                  placeholder={loadingQuote ? "Loading..." : isConnected ? "~ 0.00" : "—"}
                   disabled
-                  value={quote?.buyAmount ?? ""}
+                  value={loadingQuote ? "" : quote?.buyAmount ?? ""}
                   className="w-full max-w-[160px] rounded-2xl border border-transparent bg-transparent text-right text-3xl font-semibold tracking-tight text-emerald-500 outline-none"
                 />
               </div>
               <div className="flex flex-wrap items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                <span>Balance: {buyToken.balance} {buyToken.symbol}</span>
+                <span>Balance: {isConnected ? buyTokenBalance : buyToken.balance} {buyToken.symbol}</span>
                 <span>Price: {buyToken.price}</span>
               </div>
             </div>
@@ -460,33 +469,41 @@ export default function SwapPage() {
               </div>
             </div>
 
-            <button
-              className="w-full rounded-2xl bg-emerald-500 py-4 text-base font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-600 disabled:bg-zinc-300 disabled:text-zinc-500"
-              disabled={!isConnected || !sellAmount || submitting}
-              onClick={async () => {
-                if (!isConnected || !sellAmount) return;
-                if (!window.ethereum) return alert("No injected wallet found");
-                try {
-                  setSubmitting(true);
-                  const provider = new BrowserProvider(window.ethereum as any);
-                  const signer = await provider.getSigner();
-                  // precise conversion using ethers.parseUnits
-                  const amountIn = parseUnits(sellAmount, sellToken.decimals ?? 18) as any;
-                  const minOut = quote ? (parseUnits(quote.minReceived, buyToken.decimals ?? 18) as any) : (parseUnits("0", buyToken.decimals ?? 18) as any);
-                  // call helper — router ABI should match your deployed router
-                  const receipt = await amm.swap(signer as any, ROUTER_ADDRESS, sellToken.address, buyToken.address, amountIn, minOut);
-                  console.log("Swap receipt", receipt);
-                  alert("Swap transaction submitted — see console for receipt");
-                } catch (err) {
-                  console.error(err);
-                  alert("Swap failed: " + (((err as any)?.message) ?? "unknown"));
-                } finally {
-                  setSubmitting(false);
-                }
-              }}
-            >
-              {isConnected ? (submitting ? "Submitting…" : "Review & Execute") : "Connect Wallet to Swap"}
-            </button>
+            {errorMessage && (
+              <div className="rounded-2xl border border-red-200 bg-red-50/70 p-3 text-sm text-red-700 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-200">
+                {errorMessage}
+              </div>
+            )}
+
+            {txStatus === "success" && txHash && (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/70 p-3 text-sm text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-200">
+                Swap successful! Transaction: {shortenAddress(txHash, 8)}
+              </div>
+            )}
+
+            {needsApproval && sellToken.address !== "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" ? (
+              <button
+                className="w-full rounded-2xl bg-blue-500 py-4 text-base font-semibold text-white shadow-lg shadow-blue-500/30 transition hover:bg-blue-600 disabled:bg-zinc-300 disabled:text-zinc-500"
+                disabled={!isConnected || approving}
+                onClick={handleApprove}
+              >
+                {approving ? "Approving…" : `Approve ${sellToken.symbol}`}
+              </button>
+            ) : (
+              <button
+                className="w-full rounded-2xl bg-emerald-500 py-4 text-base font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-600 disabled:bg-zinc-300 disabled:text-zinc-500"
+                disabled={!isConnected || !sellAmount || submitting || loadingQuote || !quote}
+                onClick={handleSwap}
+              >
+                {submitting
+                  ? "Submitting…"
+                  : txStatus === "pending"
+                    ? "Transaction Pending…"
+                    : !quote
+                      ? "Enter amount"
+                      : "Review & Execute"}
+              </button>
+            )}
             {isConnected ? (
               <p className="text-center text-xs text-zinc-500 dark:text-zinc-400">
                 QuantumRouter will batch quotes across {quote?.routeCount ?? 0} pools and settle atomically.
